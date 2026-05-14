@@ -45,6 +45,8 @@
 
 @I id001 := "echoes-experience" :: identity-claim [d=2026-05-14 active]
   kind = "HF Space (static SDK) · interactive σ(n)·φ(n) = n·τ(n) proof widget at n=6"
+  brief = "interactive σφτ proof widget · HF Space · slider n=2..1000 · vanilla JS/Canvas"
+  parent = "dancinlab/echoes"
   tech = "vanilla JS + Canvas · single self-contained index.html · no bundler · no Python runtime"
   sister = "dancinlab/anima-experience (sibling HF Space — mutual-information visualizer)"
   mirror = "GitHub origin + HuggingFace hf push remote"

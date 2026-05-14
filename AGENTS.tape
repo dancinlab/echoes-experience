@@ -79,7 +79,6 @@
 
 @D g3 := "honesty-obligation-external" :: governance [required deny:write]
   rule = "Keep mathematically-true identity claims and research-hypothesis claims clearly separated in any UI copy. Claims about external entities must NOT include lattice-fit assertions."
-  authority = "raw#10 C3 · [@x_lattice_policy] §1.3"
   @> AGENTS.md
 
 @D g4 := "commit-conventions" :: governance [recommended]
@@ -101,6 +100,14 @@
   <: g_static
   @> AGENTS.md
 
+@D g_arch_vs_log_split := "v1.2 architecture-vs-history split" :: governance [required d=2026-05-14 active]
+  rule = "UPPERCASE.tape files are EDITABLE architecture (latest-wins per id). Append-only event history lives in UPPERCASE.log.tape siblings."
+  why = "declarative entries (governance · config · layout · identity) evolve naturally; locking them as append-only via ~> supersedes creates noisy histories. The split lets architecture stay current and history stay immutable."
+  applies-to = "AGENTS.tape · all UPPERCASE.tape root files"
+  authority = "[@x_tape_spec] §Domain-tape sibling §Architecture-vs-history split"
+  @> AGENTS.md
+
+
 @F f1 := "lattice-fit-on-external-entity" :: governance [required deny:write]
   pattern = "applying n=6 lattice as derivation rule to TSMC · ASML · IPCC · NASA · SpaceX · CERN · DeepMind · NIST · or any external vendor"
   exception = "values may coincidentally match — observation OK, derivation NOT OK"
@@ -112,7 +119,6 @@
 
 @X x_lattice_policy := "echoes/LATTICE_POLICY.md" :: policy [d=2026-05-12 active]
   url = "https://github.com/dancinlab/echoes/blob/main/LATTICE_POLICY.md"
-  scope = "cross-project SSOT — real-limits-first · external-entity ban · raw#10 C3"
 
 @X x_tape_spec := "tape v1.2 spec" :: spec [d=2026-05-14 active]
   url = "https://github.com/dancinlab/tape/blob/main/spec/tape.md"

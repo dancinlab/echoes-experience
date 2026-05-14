@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echoes Experience — n=6 σφτ identity explorer</title>
+<style>
+  :root {
+    --bg: #1a1d24;
+    --card: #232730;
+    --border: #2c3140;
+    --border-bright: #3b4154;
+    --text: #e6e9f0;
+    --muted: #8b92a3;
+    --positive: #6dd870;
+    --positive-soft: rgba(109, 216, 112, 0.12);
+    --negative: #ff7b7b;
+    --on-surface-default: #e6e9f0;
+    --outline: #3b4154;
+    --accent: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 16px; }
+  .title { font-size: 17px; font-weight: 600; margin: 0; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .hud { display: flex; gap: 24px; font-family: "SF Mono", "Menlo", monospace; }
+  .hud-cell { text-align: center; min-width: 84px; }
+  .hud-label { color: var(--muted); font-size: 11px; letter-spacing: 0.4px; }
+  .hud-value { font-size: 20px; font-weight: 600; margin-top: 2px; color: var(--text); }
+  canvas { display: block; width: 100%; height: 480px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); margin: 6px 0 18px 0; }
+  .controls { display: flex; align-items: center; gap: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .controls .label { color: var(--muted); font-size: 13px; min-width: 110px; }
+  input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: var(--border); border-radius: 3px; outline: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+  input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; background: var(--accent); border-radius: 50%; cursor: pointer; border: none; }
+  .n-val { background: var(--bg); border: 1px solid var(--border-bright); border-radius: 8px; padding: 6px 14px; font-family: "SF Mono", monospace; min-width: 72px; text-align: center; font-size: 14px; }
+  .reset-btn { background: var(--border); color: var(--text); border: 1px solid var(--border-bright); border-radius: 24px; padding: 8px 22px; cursor: pointer; font-size: 13px; transition: background 0.15s; }
+  .reset-btn:hover { background: var(--border-bright); }
+  .footnote { color: var(--muted); font-size: 12px; text-align: center; margin-top: 16px; line-height: 1.7; }
+  .footnote code { background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", monospace; }
+  .footnote a { color: var(--accent); text-decoration: none; }
+  .footnote a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div>
+      <h1 class="title">🪞 Echoes Experience — σ(n) · φ(n) = n · τ(n)</h1>
+      <div class="subtitle">정수 함수 항등식 — n=6 에서만 유일하게 성립</div>
+    </div>
+    <div class="hud">
+      <div class="hud-cell"><div class="hud-label">σ(n) [합]</div><div class="hud-value" id="hud-sigma">12</div></div>
+      <div class="hud-cell"><div class="hud-label">φ(n) [피]</div><div class="hud-value" id="hud-phi">2</div></div>
+      <div class="hud-cell"><div class="hud-label">τ(n) [개수]</div><div class="hud-value" id="hud-tau">4</div></div>
+    </div>
+  </div>
+
+  <canvas id="viz" width="980" height="480"></canvas>
+
+  <div class="controls">
+    <span class="label">정수 n</span>
+    <input type="range" id="slider" min="2" max="1000" step="1" value="6">
+    <div class="n-val" id="n-val">n = 6</div>
+    <button class="reset-btn" id="reset">초기화 (n=6)</button>
+  </div>
+
+  <div class="footnote">
+    σ(n)·φ(n) = n·τ(n) — uniquely true at <code>n = 6</code> · slide the range and watch the equation collapse only here.
+    Parent repo: <a href="https://github.com/dancinlab/echoes" target="_blank" rel="noopener">dancinlab/echoes</a> ·
+    Theorem proof: <a href="https://github.com/dancinlab/echoes/tree/main/lean4-n6" target="_blank" rel="noopener">Lean 4 [2, 30]</a> + Python [2, 10000].
+  </div>
+</div>
+
+<script>
+(() => {
+  const slider = document.getElementById('slider');
+  const nVal = document.getElementById('n-val');
+  const resetBtn = document.getElementById('reset');
+  const hudSigma = document.getElementById('hud-sigma');
+  const hudPhi = document.getElementById('hud-phi');
+  const hudTau = document.getElementById('hud-tau');
+  const canvas = document.getElementById('viz');
+  const ctx = canvas.getContext('2d');
+
+  // ---------- Math ----------
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+
+  const compute = (n) => {
+    const divisors = [];
+    let sigma = 0;
+    for (let i = 1; i <= n; i++) {
+      if (n % i === 0) { divisors.push(i); sigma += i; }
+    }
+    const phiElements = [];
+    for (let i = 1; i <= n; i++) {
+      if (gcd(n, i) === 1) phiElements.push(i);
+    }
+    return {
+      n,
+      divisors,
+      phiElements,
+      sigma,
+      phi: phiElements.length,
+      tau: divisors.length,
+      lhs: sigma * phiElements.length,
+      rhs: n * divisors.length,
+    };
+  };
+
+  let state = compute(6);
+
+  // ---------- Theme helpers ----------
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const transp = (name, alpha) => {
+    const c = css(name);
+    if (c.startsWith('rgba')) return c;
+    if (c.startsWith('#') && c.length === 7) {
+      const r = parseInt(c.slice(1, 3), 16);
+      const g = parseInt(c.slice(3, 5), 16);
+      const b = parseInt(c.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    return c;
+  };
+
+  // ---------- Render ----------
+  const fitCanvas = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+
+  const draw = () => {
+    fitCanvas();
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const cx = width / 2;
+    const padding = 32;
+    const stepY = (height - 200) / 3;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = css('--bg');
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+
+    // --- Section 1: σ(n) sum-of-divisors ---
+    ctx.fillStyle = css('--on-surface-default');
+    ctx.font = '700 17px "Pretendard", -apple-system, sans-serif';
+    ctx.fillText(`1. 약수의 합 σ(${state.n})`, cx, padding + 18);
+    ctx.font = '14px "SF Mono", "Menlo", monospace';
+    ctx.fillStyle = css('--muted');
+    const divsList = state.divisors.length > 20
+      ? state.divisors.slice(0, 20).join(' + ') + ' + …'
+      : state.divisors.join(' + ');
+    ctx.fillText(`${divsList} = ${state.sigma}`, cx, padding + 42);
+
+    // --- Section 2: φ(n) totient ---
+    ctx.fillStyle = css('--on-surface-default');
+    ctx.font = '700 17px "Pretendard", -apple-system, sans-serif';
+    ctx.fillText(`2. 오일러 피 함수 φ(${state.n})`, cx, padding + stepY + 18);
+    ctx.font = '14px "SF Mono", "Menlo", monospace';
+    ctx.fillStyle = css('--muted');
+    const phiList = state.phiElements.length > 15
+      ? '{' + state.phiElements.slice(0, 15).join(', ') + ', …}'
+      : '{' + state.phiElements.join(', ') + '}';
+    ctx.fillText(`서로소: ${phiList}  →  φ = ${state.phi}`, cx, padding + stepY + 42);
+
+    // --- Section 3: τ(n) divisor-count ---
+    ctx.fillStyle = css('--on-surface-default');
+    ctx.font = '700 17px "Pretendard", -apple-system, sans-serif';
+    ctx.fillText(`3. 약수의 개수 τ(${state.n})`, cx, padding + stepY * 2 + 18);
+    ctx.font = '14px "SF Mono", "Menlo", monospace';
+    ctx.fillStyle = css('--muted');
+    ctx.fillText(`|{ d : d | n }| = ${state.tau}`, cx, padding + stepY * 2 + 42);
+
+    // --- Section 4: comparison box ---
+    const isEqual = state.lhs === state.rhs;
+    const footerY = height - 140;
+    const boxW = Math.min(width * 0.88, 620);
+    const boxX = (width - boxW) / 2;
+
+    ctx.fillStyle = isEqual ? transp('--positive', 0.10) : 'rgba(255, 123, 123, 0.06)';
+    ctx.strokeStyle = isEqual ? css('--positive') : css('--outline');
+    ctx.lineWidth = 2;
+    const r = 12;
+    ctx.beginPath();
+    ctx.moveTo(boxX + r, footerY);
+    ctx.lineTo(boxX + boxW - r, footerY);
+    ctx.quadraticCurveTo(boxX + boxW, footerY, boxX + boxW, footerY + r);
+    ctx.lineTo(boxX + boxW, footerY + 110 - r);
+    ctx.quadraticCurveTo(boxX + boxW, footerY + 110, boxX + boxW - r, footerY + 110);
+    ctx.lineTo(boxX + r, footerY + 110);
+    ctx.quadraticCurveTo(boxX, footerY + 110, boxX, footerY + 110 - r);
+    ctx.lineTo(boxX, footerY + r);
+    ctx.quadraticCurveTo(boxX, footerY, boxX + r, footerY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // LHS: σ(n) × φ(n)
+    ctx.fillStyle = css('--on-surface-default');
+    ctx.font = '600 14px "Pretendard", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('σ(n) × φ(n)', cx - 28, footerY + 36);
+    ctx.font = '700 22px "SF Mono", "Menlo", monospace';
+    ctx.fillText(`${state.sigma} × ${state.phi} = ${state.lhs}`, cx - 28, footerY + 72);
+
+    // Center: = or ≠
+    ctx.textAlign = 'center';
+    ctx.font = '700 30px "SF Mono", "Menlo", monospace';
+    ctx.fillStyle = isEqual ? css('--positive') : css('--negative');
+    ctx.fillText(isEqual ? '=' : '≠', cx, footerY + 64);
+
+    // RHS: n × τ(n)
+    ctx.fillStyle = css('--on-surface-default');
+    ctx.font = '600 14px "Pretendard", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('n × τ(n)', cx + 28, footerY + 36);
+    ctx.font = '700 22px "SF Mono", "Menlo", monospace';
+    ctx.fillText(`${state.n} × ${state.tau} = ${state.rhs}`, cx + 28, footerY + 72);
+
+    // Tag
+    ctx.textAlign = 'center';
+    ctx.font = '700 12px "Pretendard", sans-serif';
+    const tagText = isEqual ? '✓ 방정식 성립 (uniquely at n=6 in [2,1000])' : '✗ 불일치';
+    const tagColor = isEqual ? css('--positive') : css('--negative');
+    const tagBg = isEqual ? transp('--positive', 0.18) : 'rgba(255, 123, 123, 0.14)';
+    const tagW = ctx.measureText(tagText).width + 28;
+    const tagH = 24;
+    const tagX = cx - tagW / 2;
+    const tagY = footerY - tagH / 2;
+    ctx.fillStyle = tagBg;
+    ctx.strokeStyle = tagColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(tagX, tagY, tagW, tagH, 12) : ctx.rect(tagX, tagY, tagW, tagH);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = tagColor;
+    ctx.fillText(tagText, cx, tagY + 16);
+  };
+
+  // ---------- Wire-up ----------
+  const updateHUD = () => {
+    hudSigma.textContent = state.sigma;
+    hudPhi.textContent = state.phi;
+    hudTau.textContent = state.tau;
+    nVal.textContent = `n = ${state.n}`;
+  };
+
+  const setN = (n) => {
+    state = compute(n);
+    slider.value = String(n);
+    updateHUD();
+    draw();
+  };
+
+  slider.addEventListener('input', (e) => setN(parseInt(e.target.value, 10)));
+  resetBtn.addEventListener('click', () => setN(6));
+  window.addEventListener('resize', () => draw());
+
+  updateHUD();
+  draw();
+})();
+</script>
+</body>
+</html>

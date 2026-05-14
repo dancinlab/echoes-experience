@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" role="img" aria-label="echoes-experience logo">
+  <polygon points="70,14 124,42 124,98 70,126 16,98 16,42"
+           fill="none" stroke="#bf8700" stroke-width="6"
+           stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="70" y="82" text-anchor="middle"
+        font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"
+        font-size="28" font-weight="700" fill="#bf8700">6</text>
+  <text x="70" y="116" text-anchor="middle"
+        font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"
+        font-size="12" font-weight="700" fill="#bf8700"
+        letter-spacing="1">σφτ</text>
+</svg>
